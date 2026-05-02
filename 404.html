@@ -36,7 +36,9 @@
             width: 100%; background: #f2f2f7; border: 1.5px solid #007aff;
             border-radius: 18px; padding: 16px; font-family: 'Courier New', monospace;
             font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
-            color: #aeaeb2; letter-spacing: 1px;
+            color: #000000; /* Deep black text */
+            font-weight: 600;
+            letter-spacing: 1px;
         }
 
         .code-container {
@@ -59,6 +61,7 @@
             width: 100%; background: #007aff; color: white; border: none;
             border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600;
             cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.2);
         }
 
         .footer-info { display: flex; justify-content: space-between; align-items: center; padding: 5px; margin-top: 10px;}
@@ -66,7 +69,7 @@
         .next-up-box.show { opacity: 1; }
         
         .next-up-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; }
+        #nextCode { font-size: 16px; font-weight: 600; color: #1c1c1e; }
         
         .material-symbols-outlined { font-size: 18px; vertical-align: middle; transition: transform 0.2s; }
 
@@ -81,6 +84,7 @@
             position: fixed; top: 30px; background: rgba(0,0,0,0.8);
             color: white; padding: 12px 25px; border-radius: 30px;
             font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            z-index: 999;
         }
     </style>
 </head>
@@ -103,124 +107,4 @@
     <div class="footer-info">
         <div class="next-up-box" id="nextSec">
             <span class="label-tiny">Next Up</span>
-            <div class="next-up-row" onclick="copyValue('nextCode')">
-                <span id="nextCode">------</span>
-                <span class="material-symbols-outlined" id="nextIcon" style="color: #007aff; opacity: 0.6;">content_copy</span>
-            </div>
-        </div>
-        <div class="timer-container">
-            <span id="timerText">30s</span>
-            <div class="progress-bg"><div id="progressBar"></div></div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const secretInput = document.getElementById('secretInput');
-    const currentDisplay = document.getElementById('currentCode');
-    const nextDisplay = document.getElementById('nextCode');
-    const timerText = document.getElementById('timerText');
-    const progressBar = document.getElementById('progressBar');
-    const actionBtn = document.getElementById('actionBtn');
-    const nextSec = document.getElementById('nextSec');
-
-    // Auto-grab from URL
-    const path = window.location.pathname.split('/').filter(p => p).pop();
-    if (path && path.length > 4) { secretInput.value = path.toUpperCase(); }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.opacity = "1";
-        setTimeout(() => t.style.opacity = "0", 1500);
-    }
-
-    // HTTP-friendly copy
-    function execCopy(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-    }
-
-    function revealUI() {
-        const secret = secretInput.value.trim().replace(/\s/g, '');
-        if (!secret) return;
-        
-        currentDisplay.classList.add('revealed');
-        nextSec.classList.add('show');
-        
-        // Initial Reveal Copy
-        execCopy(currentDisplay.innerText);
-        showToast("Code Copied");
-
-        // Change button to Animated "Copy Code"
-        actionBtn.innerText = "✓ Copied";
-        actionBtn.style.background = "#34c759";
-        
-        setTimeout(() => {
-            actionBtn.innerText = "Copy Code";
-            actionBtn.style.background = "#007aff";
-        }, 1500);
-
-        // Update button behavior for future clicks
-        actionBtn.onclick = () => {
-            const val = currentDisplay.innerText;
-            if(val.includes('-')) return;
-            execCopy(val);
-            
-            actionBtn.innerText = "✓ Copied";
-            actionBtn.style.background = "#34c759";
-            setTimeout(() => {
-                actionBtn.innerText = "Copy Code";
-                actionBtn.style.background = "#007aff";
-            }, 1500);
-        };
-        
-        updateTOTP();
-    }
-
-    function copyValue(id) {
-        const val = document.getElementById(id).innerText;
-        if(val.includes('-')) return;
-        execCopy(val);
-        showToast("Copied");
-
-        const icon = document.getElementById('nextIcon');
-        icon.style.transform = "scale(1.4)";
-        setTimeout(() => icon.style.transform = "scale(1)", 200);
-    }
-
-    function updateTOTP() {
-        let raw = secretInput.value.replace(/[^A-Z2-7]/gi, '').toUpperCase();
-        if (!raw || !currentDisplay.classList.contains('revealed')) return;
-
-        try {
-            const totp = new OTPAuth.TOTP({
-                secret: OTPAuth.Secret.fromBase32(raw),
-                digits: 6,
-                period: 30
-            });
-
-            const now = Date.now();
-            const timeLeft = 30 - (Math.floor(now / 1000) % 30);
-            
-            currentDisplay.innerText = totp.generate();
-            nextDisplay.innerText = totp.generate({ timestamp: now + 30000 });
-            
-            timerText.innerText = timeLeft + "s";
-            progressBar.style.width = (timeLeft / 30 * 100) + "%";
-            
-            const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
-            progressBar.style.backgroundColor = color; 
-            timerText.style.color = color;
-        } catch (e) {
-            currentDisplay.innerText = "INVALID";
-        }
-    }
-
-    setInterval(updateTOTP, 1000);
-</script>
-</body>
-</html>
+            <div class="next-up-row" onclick
