@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Authenticator</title>
+    <title>Authenticator Pro</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
@@ -28,6 +28,7 @@
             gap: 20px;
             box-sizing: border-box;
             position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         .copy-url-btn {
@@ -45,7 +46,7 @@
             width: 100%; background: #f2f2f7; border: 1.5px solid #007aff;
             border-radius: 18px; padding: 16px; font-family: 'Courier New', monospace;
             font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
-            color: #aeaeb2; letter-spacing: 1px;
+            color: #1c1c1e; letter-spacing: 1px;
         }
 
         .code-container {
@@ -61,7 +62,6 @@
         #currentCode {
             font-size: 44px; font-weight: 800; color: #007aff;
             letter-spacing: 5px; margin-bottom: 20px;
-            filter: blur(14px); transition: filter 0.4s ease;
         }
 
         .btn-primary {
@@ -71,8 +71,7 @@
         }
 
         .footer-info { display: flex; justify-content: space-between; align-items: center; padding: 5px; margin-top: 10px;}
-        .next-up-box { text-align: left; opacity: 0; transition: opacity 0.4s; }
-        .next-up-box.show { opacity: 1; }
+        .next-up-box { text-align: left; }
         
         .next-up-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; }
@@ -84,10 +83,8 @@
         .progress-bg { background: #d1d1d6; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }
         #progressBar { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
 
-        .revealed { filter: blur(0) !important; }
-
         #toast {
-            position: fixed; top: 30px; background: rgba(0,0,0,0.8);
+            position: fixed; top: 30px; background: rgba(0,0,0,0.9);
             color: white; padding: 12px 25px; border-radius: 30px;
             font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
             z-index: 999;
@@ -99,32 +96,32 @@
 <div id="toast">Copied</div>
 
 <div class="card">
-    <button class="copy-url-btn" onclick="copyCurrentUrl()" title="Copy URL">
+    <button class="copy-url-btn" onclick="copyCurrentUrl()" aria-label="Copy URL">
         <span class="material-symbols-outlined" id="urlIcon">link</span>
     </button>
 
     <h2>Authenticator</h2>
     <div class="sub-text">Secure Link Protocol</div>
 
-    <input type="text" id="secretInput" class="input-field" placeholder="Enter Secret Key">
+    <input type="text" id="secretInput" class="input-field" placeholder="Enter Secret Key" spellcheck="false">
 
     <div class="code-container">
         <span class="label-tiny">Current Code</span>
         <div id="currentCode">------</div>
-        <button class="btn-primary" id="actionBtn" onclick="revealUI()">Show</button>
+        <button class="btn-primary" id="actionBtn" onclick="copyMainCode()">Copy Code</button>
     </div>
 
     <div class="footer-info">
-        <div class="next-up-box" id="nextSec">
+        <div class="next-up-box">
             <span class="label-tiny">Next Up</span>
-            <div class="next-up-row" onclick="copyValue('nextCode')">
+            <div class="next-up-row" onclick="copyValue('nextCode')" aria-label="Copy Next Code">
                 <span id="nextCode">------</span>
                 <span class="material-symbols-outlined" id="nextIcon" style="color: #007aff; opacity: 0.6;">content_copy</span>
             </div>
         </div>
         <div class="timer-container">
             <span id="timerText">30s</span>
-            <div class="bar-bg progress-bg"><div id="progressBar"></div></div>
+            <div class="progress-bg"><div id="progressBar"></div></div>
         </div>
     </div>
 </div>
@@ -136,84 +133,76 @@
     const timerText = document.getElementById('timerText');
     const progressBar = document.getElementById('progressBar');
     const actionBtn = document.getElementById('actionBtn');
-    const nextSec = document.getElementById('nextSec');
 
+    // Automatically grab secret from URL path
     const path = window.location.pathname.split('/').filter(p => p).pop();
-    if (path && path.length > 4) { secretInput.value = path.toUpperCase(); }
+    if (path && path.length > 4) { 
+        secretInput.value = path.toUpperCase(); 
+    }
 
-    function showToast(msg) {
+    async function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg; t.style.opacity = "1";
         setTimeout(() => t.style.opacity = "0", 1500);
     }
 
-    function execCopy(text) {
-        if (!text || text.includes('-')) return;
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
+    async function safeCopy(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return true;
+        }
     }
 
     function copyCurrentUrl() {
-        execCopy(window.location.href);
+        safeCopy(window.location.href);
         showToast("URL Copied");
         const icon = document.getElementById('urlIcon');
         icon.innerText = "check";
         setTimeout(() => icon.innerText = "link", 1500);
     }
 
-    function revealUI() {
-        const secret = secretInput.value.trim().replace(/\s/g, '');
-        if (!secret) return;
+    function copyMainCode() {
+        const code = currentDisplay.innerText;
+        if (code === "------" || code === "INVALID") return;
         
-        // 1. Unblur and calculate code immediately
-        currentDisplay.classList.add('revealed');
-        nextSec.classList.add('show');
-        updateTOTP();
-
-        // 2. Delay the copy slightly so it doesn't grab "------"
+        safeCopy(code);
+        showToast("Code Copied");
+        
+        actionBtn.innerText = "✓ Copied";
+        actionBtn.style.background = "#34c759";
         setTimeout(() => {
-            const freshCode = currentDisplay.innerText;
-            execCopy(freshCode);
-            showToast("Code Copied");
-            
-            // 3. Update button appearance
-            actionBtn.innerText = "✓ Copied";
-            actionBtn.style.background = "#34c759";
-            
-            setTimeout(() => {
-                actionBtn.innerText = "Copy Code";
-                actionBtn.style.background = "#007aff";
-            }, 1500);
-        }, 50);
-
-        // 4. Change button behavior for all future clicks
-        actionBtn.onclick = () => {
-            execCopy(currentDisplay.innerText);
-            actionBtn.innerText = "✓ Copied";
-            actionBtn.style.background = "#34c759";
-            setTimeout(() => {
-                actionBtn.innerText = "Copy Code";
-                actionBtn.style.background = "#007aff";
-            }, 1000);
-        };
+            actionBtn.innerText = "Copy Code";
+            actionBtn.style.background = "#007aff";
+        }, 1000);
     }
 
     function copyValue(id) {
         const val = document.getElementById(id).innerText;
-        execCopy(val);
-        showToast("Copied");
+        if (val.includes('-')) return;
+        safeCopy(val);
+        showToast("Next Code Copied");
         const icon = document.getElementById('nextIcon');
         icon.style.transform = "scale(1.4)";
         setTimeout(() => icon.style.transform = "scale(1)", 200);
     }
 
     function updateTOTP() {
-        let raw = secretInput.value.replace(/[^A-Z2-7]/gi, '').toUpperCase();
-        if (!raw || !currentDisplay.classList.contains('revealed')) return;
+        // Sanitize input: remove spaces and non-base32 chars
+        let raw = secretInput.value.replace(/\s/g, '').replace(/[^A-Z2-7]/gi, '').toUpperCase();
+        if (!raw) {
+            currentDisplay.innerText = "------";
+            nextDisplay.innerText = "------";
+            return;
+        }
 
         try {
             const totp = new OTPAuth.TOTP({
@@ -224,10 +213,14 @@
 
             const now = Date.now();
             const timeLeft = 30 - (Math.floor(now / 1000) % 30);
+            
             currentDisplay.innerText = totp.generate();
             nextDisplay.innerText = totp.generate({ timestamp: now + 30000 });
+            
             timerText.innerText = timeLeft + "s";
             progressBar.style.width = (timeLeft / 30 * 100) + "%";
+            
+            // Color warning when time is low
             const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
             progressBar.style.backgroundColor = color; 
             timerText.style.color = color;
@@ -236,7 +229,13 @@
         }
     }
 
+    // Run every second
     setInterval(updateTOTP, 1000);
+    // Initial run
+    updateTOTP();
+
+    // Listen for manual input changes
+    secretInput.addEventListener('input', updateTOTP);
 </script>
 </body>
 </html>
