@@ -27,17 +27,20 @@
             flex-direction: column;
             gap: 25px;
             box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         h2 { font-size: 28px; font-weight: 600; margin: 0; color: #1c1c1e; }
-        .sub-text { font-size: 15px; color: #aeaeb2; margin-top: -15px; }
+        .sub-text { font-size: 14px; color: #aeaeb2; margin-top: -15px; }
 
         .input-field {
-            width: 100%; background: #f2f2f7; border: none;
-            border-radius: 18px; padding: 22px; font-family: 'Courier New', monospace;
-            font-size: 22px; text-align: center; outline: none; box-sizing: border-box;
-            color: #636366; letter-spacing: 1px;
+            width: 100%; background: #f2f2f7; border: 1.5px solid transparent;
+            border-radius: 18px; padding: 20px; font-family: 'Courier New', monospace;
+            font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
+            color: #1c1c1e; letter-spacing: 1px; transition: border 0.2s;
         }
+        /* Allow manual entry if the URL fails */
+        .input-field:focus { border-color: #007aff; background: #ffffff; }
 
         .code-container {
             background: #f8f9fb; border-radius: 30px; padding: 35px 20px;
@@ -45,7 +48,7 @@
         }
 
         .label-upper {
-            font-size: 12px; font-weight: 600; color: #aeaeb2;
+            font-size: 11px; font-weight: 700; color: #aeaeb2;
             text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
         }
 
@@ -57,3 +60,99 @@
 
         .btn-main {
             width: 100%; background: #007aff; color: white; border: none;
+            border-radius: 20px; padding: 20px; font-size: 18px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 10px 25px rgba(0, 122, 255, 0.2);
+            transition: all 0.2s;
+        }
+        .btn-main:active { transform: scale(0.98); opacity: 0.9; }
+
+        .footer {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding: 0 5px; min-height: 45px;
+        }
+
+        .next-section { text-align: left; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+        .next-section.show { opacity: 1; pointer-events: auto; }
+        
+        .next-title { font-size: 10px; font-weight: 700; color: #aeaeb2; text-transform: uppercase; margin-bottom: 8px;}
+        .next-val-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        #nextCode { font-size: 17px; font-weight: 600; color: #8e8e93; letter-spacing: 1px; }
+
+        .timer-section { text-align: right; min-width: 110px; }
+        #timerText { font-size: 13px; font-weight: 700; color: #007aff; margin-bottom: 6px; display: block; }
+        .bar-bg { background: #e5e5ea; height: 6px; border-radius: 10px; overflow: hidden; }
+        #barFill { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
+
+        .revealed { filter: blur(0) !important; }
+
+        #toast {
+            position: fixed; top: 30px; background: rgba(0,0,0,0.85);
+            color: white; padding: 12px 25px; border-radius: 30px;
+            font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast">Copied</div>
+
+<div class="card">
+    <h2>Authenticator</h2>
+    <div class="sub-text">Secure Link Protocol</div>
+
+    <input type="text" id="secretInput" class="input-field" placeholder="Paste Secret Key">
+
+    <div class="code-container">
+        <span class="label-upper">Current Code</span>
+        <div id="currentCode">- - - - - -</div>
+        <button class="btn-main" id="showBtn" onclick="revealUI()">Show</button>
+    </div>
+
+    <div class="footer">
+        <div class="next-section" id="nextSec">
+            <div class="next-title">Next Up</div>
+            <div class="next-val-row" onclick="copyValue('nextCode')">
+                <span id="nextCode">------</span>
+                <span class="material-symbols-outlined" style="font-size: 16px; color: #007aff; opacity: 0.6;">content_copy</span>
+            </div>
+        </div>
+
+        <div class="timer-section">
+            <span id="timerText">30s</span>
+            <div class="bar-bg"><div id="barFill"></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const secretInput = document.getElementById('secretInput');
+    const currentCode = document.getElementById('currentCode');
+    const nextCode = document.getElementById('nextCode');
+    const showBtn = document.getElementById('showBtn');
+    const nextSec = document.getElementById('nextSec');
+    const barFill = document.getElementById('barFill');
+    const timerText = document.getElementById('timerText');
+
+    // Robust path detection
+    function getSecretFromURL() {
+        const parts = window.location.pathname.split('/').filter(p => p.length > 0);
+        if (parts.length > 0) {
+            return parts[parts.length - 1].toUpperCase();
+        }
+        return null;
+    }
+
+    const urlKey = getSecretFromURL();
+    if (urlKey) {
+        secretInput.value = urlKey;
+        // Small delay to ensure clipboard permission
+        setTimeout(() => {
+            navigator.clipboard.writeText(urlKey).catch(() => {});
+        }, 500);
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.opacity = "1";
+        setTimeout(() => t.style.opacity = "0", 1
