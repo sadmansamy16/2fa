@@ -27,25 +27,14 @@
             flex-direction: column;
             gap: 20px;
             box-sizing: border-box;
-            position: relative; /* Required for the top-right icon */
+            position: relative;
         }
 
-        /* Top Right Copy URL Icon */
         .copy-url-btn {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            background: #f2f2f7;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #8e8e93;
-            transition: all 0.2s ease;
+            position: absolute; top: 25px; right: 25px;
+            background: #f2f2f7; border: none; border-radius: 50%;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #8e8e93; transition: all 0.2s ease;
         }
         .copy-url-btn:active { transform: scale(0.9); background: #e5e5ea; }
 
@@ -135,7 +124,7 @@
         </div>
         <div class="timer-container">
             <span id="timerText">30s</span>
-            <div class="progress-bg"><div id="progressBar"></div></div>
+            <div class="bar-bg progress-bg"><div id="progressBar"></div></div>
         </div>
     </div>
 </div>
@@ -149,7 +138,6 @@
     const actionBtn = document.getElementById('actionBtn');
     const nextSec = document.getElementById('nextSec');
 
-    // Auto-grab from URL
     const path = window.location.pathname.split('/').filter(p => p).pop();
     if (path && path.length > 4) { secretInput.value = path.toUpperCase(); }
 
@@ -159,8 +147,8 @@
         setTimeout(() => t.style.opacity = "0", 1500);
     }
 
-    // HTTP-friendly copy
     function execCopy(text) {
+        if (!text || text.includes('-')) return;
         const textArea = document.createElement("textarea");
         textArea.value = text;
         document.body.appendChild(textArea);
@@ -181,38 +169,41 @@
         const secret = secretInput.value.trim().replace(/\s/g, '');
         if (!secret) return;
         
+        // 1. Unblur and calculate code immediately
         currentDisplay.classList.add('revealed');
         nextSec.classList.add('show');
-        
-        execCopy(currentDisplay.innerText);
-        showToast("Code Copied");
+        updateTOTP();
 
-        actionBtn.innerText = "✓ Copied";
-        actionBtn.style.background = "#34c759";
-        
+        // 2. Delay the copy slightly so it doesn't grab "------"
         setTimeout(() => {
-            actionBtn.innerText = "Copy Code";
-            actionBtn.style.background = "#007aff";
-        }, 1500);
+            const freshCode = currentDisplay.innerText;
+            execCopy(freshCode);
+            showToast("Code Copied");
+            
+            // 3. Update button appearance
+            actionBtn.innerText = "✓ Copied";
+            actionBtn.style.background = "#34c759";
+            
+            setTimeout(() => {
+                actionBtn.innerText = "Copy Code";
+                actionBtn.style.background = "#007aff";
+            }, 1500);
+        }, 50);
 
+        // 4. Change button behavior for all future clicks
         actionBtn.onclick = () => {
-            const val = currentDisplay.innerText;
-            if(val.includes('-')) return;
-            execCopy(val);
+            execCopy(currentDisplay.innerText);
             actionBtn.innerText = "✓ Copied";
             actionBtn.style.background = "#34c759";
             setTimeout(() => {
                 actionBtn.innerText = "Copy Code";
                 actionBtn.style.background = "#007aff";
-            }, 1500);
+            }, 1000);
         };
-        
-        updateTOTP();
     }
 
     function copyValue(id) {
         const val = document.getElementById(id).innerText;
-        if(val.includes('-')) return;
         execCopy(val);
         showToast("Copied");
         const icon = document.getElementById('nextIcon');
