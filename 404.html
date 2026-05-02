@@ -108,4 +108,156 @@
         </button>
         <label class="btn-secondary">
             <span class="material-symbols-outlined">upload_file</span> File
-            <input type="file" accept="image/*" id="qr-input" onchange="scanFile(this)" style="display:
+            <input type="file" accept="image/*" id="qr-input" onchange="scanFile(this)" style="display: none;">
+        </label>
+    </div>
+
+    <div id="reader"></div>
+
+    <input type="text" id="secretInput" class="input-field" placeholder="Secret Key" spellcheck="false">
+
+    <div class="code-container">
+        <span class="label-tiny">Current Code</span>
+        <div id="currentCode">------</div>
+        <button class="btn-primary" id="copyBtn" onclick="copyValue('currentCode')">Copy Code</button>
+    </div>
+
+    <div class="footer-info">
+        <div class="next-up-box">
+            <span class="label-tiny">Next Up</span>
+            <div class="next-up-row" onclick="copyValue('nextCode')">
+                <span id="nextCode">------</span>
+                <span class="material-symbols-outlined" style="font-size:16px; color:#007aff;">content_copy</span>
+            </div>
+        </div>
+        <div class="timer-container">
+            <span id="timerText">30s</span>
+            <div class="progress-bg"><div id="progressBar"></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const secretInput = document.getElementById('secretInput');
+    const currentDisplay = document.getElementById('currentCode');
+    const nextDisplay = document.getElementById('nextCode');
+    const timerText = document.getElementById('timerText');
+    const progressBar = document.getElementById('progressBar');
+    const copyBtn = document.getElementById('copyBtn');
+    const html5QrCode = new Html5Qrcode("reader");
+
+    // Init from URL path if present
+    const path = window.location.pathname.split('/').filter(p => p).pop();
+    if (path && path.length > 3) { secretInput.value = path.toUpperCase(); }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.opacity = "1";
+        setTimeout(() => t.style.opacity = "0", 1500);
+    }
+
+    async function startCamera() {
+        document.getElementById('reader').style.display = 'block';
+        document.getElementById('startCamBtn').style.display = 'none';
+        document.getElementById('stopCamBtn').style.display = 'flex';
+        try {
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+            (text) => { processInput(text); stopCamera(); });
+        } catch (err) {
+            alert("Camera error. Please ensure permissions are granted.");
+            stopCamera();
+        }
+    }
+
+    function stopCamera() {
+        const resetUI = () => {
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('startCamBtn').style.display = 'flex';
+            document.getElementById('stopCamBtn').style.display = 'none';
+        };
+        if (html5QrCode.isScanning) {
+            html5QrCode.stop().then(resetUI);
+        } else { resetUI(); }
+    }
+
+    function scanFile(input) {
+        if (input.files[0]) {
+            html5QrCode.scanFile(input.files[0], true)
+                .then(text => processInput(text))
+                .catch(() => alert("No QR code found in this image."));
+        }
+    }
+
+    function processInput(data) {
+        let secret = data;
+        if (data.includes('secret=')) {
+            try {
+                const url = new URL(data);
+                secret = url.searchParams.get("secret");
+            } catch(e) {
+                secret = data.split('secret=')[1]?.split('&')[0] || data;
+            }
+        }
+        secretInput.value = secret.toUpperCase().replace(/\s/g, '');
+        updateTOTP();
+    }
+
+    function updateTOTP() {
+        let raw = secretInput.value.replace(/\s/g, '');
+        if (!raw || raw.length < 1) {
+            currentDisplay.innerText = "------";
+            nextDisplay.innerText = "------";
+            return;
+        }
+
+        try {
+            // Using UTF8 fallback for short/custom codes, Base32 for standard ones
+            const secretObj = raw.length < 8 ? OTPAuth.Secret.fromUTF8(raw) : OTPAuth.Secret.fromBase32(raw.replace(/[^A-Z2-7]/gi, '').toUpperCase());
+            
+            const totp = new OTPAuth.TOTP({
+                secret: secretObj,
+                digits: 6,
+                period: 30
+            });
+
+            const now = Date.now();
+            const timeLeft = 30 - (Math.floor(now / 1000) % 30);
+            
+            currentDisplay.innerText = totp.generate();
+            nextDisplay.innerText = totp.generate({ timestamp: now + 30000 });
+            
+            timerText.innerText = timeLeft + "s";
+            progressBar.style.width = (timeLeft / 30 * 100) + "%";
+            const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
+            progressBar.style.backgroundColor = color; 
+            timerText.style.color = color;
+        } catch (e) {
+            currentDisplay.innerText = "INVALID";
+        }
+    }
+
+    async function copyValue(id) {
+        const val = document.getElementById(id).innerText;
+        if (val.includes('-') || val === "INVALID") return;
+        
+        try {
+            await navigator.clipboard.writeText(val);
+            showToast("Copied");
+            
+            if (id === 'currentCode') {
+                copyBtn.innerText = "✓ Copied";
+                copyBtn.style.background = "#34c759";
+                setTimeout(() => {
+                    copyBtn.innerText = "Copy Code";
+                    copyBtn.style.background = "#007aff";
+                }, 1500);
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    secretInput.addEventListener('input', updateTOTP);
+    setInterval(updateTOTP, 1000);
+    updateTOTP(); // Initial run
+</script>
+</body>
+</html>
