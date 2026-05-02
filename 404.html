@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Authenticator</title>
     
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=visibility,content_copy" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
 
     <style>
@@ -19,76 +19,73 @@
         .card {
             background: #ffffff;
             border-radius: 40px;
-            padding: 45px 30px;
+            padding: 40px 30px;
             text-align: center;
             width: 90%;
             max-width: 380px;
             display: flex;
             flex-direction: column;
-            gap: 25px;
+            gap: 20px;
             box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         h2 { font-size: 28px; font-weight: 600; margin: 0; color: #1c1c1e; }
-        .sub-text { font-size: 14px; color: #aeaeb2; margin-top: -15px; }
+        .sub-text { font-size: 15px; color: #aeaeb2; margin-top: -10px; margin-bottom: 5px; }
 
         .input-field {
-            width: 100%; background: #f2f2f7; border: 1.5px solid transparent;
-            border-radius: 18px; padding: 20px; font-family: 'Courier New', monospace;
-            font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
-            color: #1c1c1e; letter-spacing: 1px; transition: border 0.2s;
+            width: 100%; background: #f2f2f7; border: 1.5px solid #007aff;
+            border-radius: 18px; padding: 18px; font-family: 'Courier New', monospace;
+            font-size: 22px; text-align: center; outline: none; box-sizing: border-box;
+            color: #aeaeb2; letter-spacing: 1px;
         }
-        .input-field:focus { border-color: #007aff; background: #ffffff; }
 
         .code-container {
-            background: #f8f9fb; border-radius: 30px; padding: 35px 20px;
+            background: #f8f9fb; border-radius: 30px; padding: 30px 20px;
             display: flex; flex-direction: column; align-items: center;
         }
 
         .label-upper {
-            font-size: 11px; font-weight: 700; color: #aeaeb2;
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
+            font-size: 13px; font-weight: 600; color: #aeaeb2;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;
         }
 
         #currentCode {
-            font-size: 52px; font-weight: 700; color: #007aff;
-            letter-spacing: 6px; margin-bottom: 25px;
+            font-size: 60px; font-weight: 700; color: #007aff;
+            letter-spacing: 2px; margin-bottom: 20px;
             filter: blur(14px); transition: filter 0.4s ease;
         }
 
         .btn-main {
             width: 100%; background: #007aff; color: white; border: none;
-            border-radius: 20px; padding: 20px; font-size: 18px; font-weight: 600;
-            cursor: pointer; box-shadow: 0 10px 25px rgba(0, 122, 255, 0.2);
-            transition: all 0.2s;
+            border-radius: 20px; padding: 18px; font-size: 18px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 10px 20px rgba(0, 122, 255, 0.2);
         }
-        .btn-main:active { transform: scale(0.98); opacity: 0.9; }
 
         .footer {
-            display: flex; justify-content: space-between; align-items: flex-end;
-            padding: 0 5px; min-height: 45px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 5px; margin-top: 10px;
         }
 
-        .next-section { text-align: left; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
-        .next-section.show { opacity: 1; pointer-events: auto; }
+        .next-section { text-align: left; opacity: 0; }
+        .next-section.show { opacity: 1; }
         
-        .next-title { font-size: 10px; font-weight: 700; color: #aeaeb2; text-transform: uppercase; margin-bottom: 8px;}
-        .next-val-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        #nextCode { font-size: 17px; font-weight: 600; color: #8e8e93; letter-spacing: 1px; }
+        .next-title { font-size: 11px; font-weight: 600; color: #aeaeb2; text-transform: uppercase; margin-bottom: 4px;}
+        .next-val-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        #nextCode { font-size: 18px; font-weight: 500; color: #8e8e93; }
 
-        .timer-section { text-align: right; min-width: 110px; }
-        #timerText { font-size: 13px; font-weight: 700; color: #007aff; margin-bottom: 6px; display: block; }
-        .bar-bg { background: #e5e5ea; height: 6px; border-radius: 10px; overflow: hidden; }
+        .timer-section { text-align: right; min-width: 100px; position: relative; }
+        #timerText { font-size: 13px; font-weight: 600; color: #007aff; margin-bottom: 4px; display: block; }
+        .bar-bg { background: #e5e5ea; height: 6px; border-radius: 10px; overflow: hidden; width: 100%; }
         #barFill { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
 
         .revealed { filter: blur(0) !important; }
 
+        .material-symbols-outlined { vertical-align: middle; font-size: 20px; }
+
         #toast {
-            position: fixed; top: 30px; background: rgba(0,0,0,0.85);
+            position: fixed; top: 30px; background: rgba(0,0,0,0.8);
             color: white; padding: 12px 25px; border-radius: 30px;
             font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-            z-index: 100;
         }
     </style>
 </head>
@@ -104,7 +101,7 @@
 
     <div class="code-container">
         <span class="label-upper">Current Code</span>
-        <div id="currentCode">- - - - - -</div>
+        <div id="currentCode">000000</div>
         <button class="btn-main" id="showBtn" onclick="revealUI()">Show</button>
     </div>
 
@@ -112,8 +109,8 @@
         <div class="next-section" id="nextSec">
             <div class="next-title">Next Up</div>
             <div class="next-val-row" onclick="copyValue('nextCode')">
-                <span id="nextCode">------</span>
-                <span class="material-symbols-outlined" style="font-size: 16px; color: #007aff; opacity: 0.6;">content_copy</span>
+                <span id="nextCode">000000</span>
+                <span class="material-symbols-outlined" style="color: #007aff; opacity: 0.5;">content_copy</span>
             </div>
         </div>
 
@@ -133,29 +130,10 @@
     const barFill = document.getElementById('barFill');
     const timerText = document.getElementById('timerText');
 
-    // --- IMPROVED URL GRABBER ---
-    function init() {
-        // This looks at the full URL path, splits it by slashes, 
-        // and takes the last item that isn't empty.
-        const path = window.location.pathname;
-        const parts = path.split('/').filter(p => p.length > 0);
-        
-        // If your URL is 2fa.samy.pro.bd/SECRET, parts[0] will be SECRET.
-        // If your URL is samy.pro.bd/2fa/SECRET, parts[1] will be SECRET.
-        let detectedSecret = "";
-
-        if (parts.length > 0) {
-            // Take the very last part of the URL
-            detectedSecret = parts[parts.length - 1].toUpperCase();
-        }
-
-        if (detectedSecret && detectedSecret.length > 4) {
-            secretInput.value = detectedSecret;
-            // Attempt auto-copy
-            setTimeout(() => {
-                navigator.clipboard.writeText(detectedSecret).catch(e => console.log("Auto-copy blocked by browser"));
-            }, 500);
-        }
+    // Auto-grab secret from URL
+    const path = window.location.pathname.split('/').filter(p => p).pop();
+    if (path && path.length > 4) {
+        secretInput.value = path.toUpperCase();
     }
 
     function showToast(msg) {
@@ -166,25 +144,27 @@
 
     function revealUI() {
         const secret = secretInput.value.trim().replace(/\s/g, '');
-        if (!secret || secret.length < 4) {
-            showToast("No Key Found");
-            return;
-        }
+        if (!secret) return;
         
         currentCode.classList.add('revealed');
         nextSec.classList.add('show');
         showBtn.innerText = "Copy Code";
         
-        showBtn.onclick = () => copyValue('currentCode');
+        // Fix for Copy Button
+        showBtn.onclick = () => {
+            navigator.clipboard.writeText(currentCode.innerText);
+            showToast("Code Copied");
+        };
         
         updateLogic();
-        copyValue('currentCode');
+        navigator.clipboard.writeText(currentCode.innerText);
+        showToast("Code Copied");
     }
 
     function copyValue(id) {
         const val = document.getElementById(id).innerText;
-        if (val.includes('-') || val === "ERROR") return;
-        navigator.clipboard.writeText(val).then(() => showToast("Copied"));
+        navigator.clipboard.writeText(val);
+        showToast("Copied");
     }
 
     function updateLogic() {
@@ -207,16 +187,14 @@
             timerText.innerText = timeLeft + "s";
             barFill.style.width = (timeLeft / 30 * 100) + "%";
             
-            const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
-            barFill.style.backgroundColor = color;
-            timerText.style.color = color;
+            const themeColor = timeLeft <= 5 ? "#ff3b30" : "#007aff";
+            barFill.style.backgroundColor = themeColor;
+            timerText.style.color = themeColor;
         } catch (e) {
-            currentCode.innerText = "INVALID";
+            currentCode.innerText = "ERROR";
         }
     }
 
-    // Initialize on load
-    window.onload = init;
     setInterval(updateLogic, 1000);
 </script>
 </body>
