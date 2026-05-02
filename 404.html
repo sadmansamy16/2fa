@@ -39,7 +39,6 @@
             font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
             color: #1c1c1e; letter-spacing: 1px; transition: border 0.2s;
         }
-        /* Allow manual entry if the URL fails */
         .input-field:focus { border-color: #007aff; background: #ffffff; }
 
         .code-container {
@@ -134,25 +133,91 @@
     const barFill = document.getElementById('barFill');
     const timerText = document.getElementById('timerText');
 
-    // Robust path detection
-    function getSecretFromURL() {
-        const parts = window.location.pathname.split('/').filter(p => p.length > 0);
-        if (parts.length > 0) {
-            return parts[parts.length - 1].toUpperCase();
-        }
-        return null;
-    }
+    // --- IMPROVED URL GRABBER ---
+    function init() {
+        // This looks at the full URL path, splits it by slashes, 
+        // and takes the last item that isn't empty.
+        const path = window.location.pathname;
+        const parts = path.split('/').filter(p => p.length > 0);
+        
+        // If your URL is 2fa.samy.pro.bd/SECRET, parts[0] will be SECRET.
+        // If your URL is samy.pro.bd/2fa/SECRET, parts[1] will be SECRET.
+        let detectedSecret = "";
 
-    const urlKey = getSecretFromURL();
-    if (urlKey) {
-        secretInput.value = urlKey;
-        // Small delay to ensure clipboard permission
-        setTimeout(() => {
-            navigator.clipboard.writeText(urlKey).catch(() => {});
-        }, 500);
+        if (parts.length > 0) {
+            // Take the very last part of the URL
+            detectedSecret = parts[parts.length - 1].toUpperCase();
+        }
+
+        if (detectedSecret && detectedSecret.length > 4) {
+            secretInput.value = detectedSecret;
+            // Attempt auto-copy
+            setTimeout(() => {
+                navigator.clipboard.writeText(detectedSecret).catch(e => console.log("Auto-copy blocked by browser"));
+            }, 500);
+        }
     }
 
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg; t.style.opacity = "1";
-        setTimeout(() => t.style.opacity = "0", 1
+        setTimeout(() => t.style.opacity = "0", 1500);
+    }
+
+    function revealUI() {
+        const secret = secretInput.value.trim().replace(/\s/g, '');
+        if (!secret || secret.length < 4) {
+            showToast("No Key Found");
+            return;
+        }
+        
+        currentCode.classList.add('revealed');
+        nextSec.classList.add('show');
+        showBtn.innerText = "Copy Code";
+        
+        showBtn.onclick = () => copyValue('currentCode');
+        
+        updateLogic();
+        copyValue('currentCode');
+    }
+
+    function copyValue(id) {
+        const val = document.getElementById(id).innerText;
+        if (val.includes('-') || val === "ERROR") return;
+        navigator.clipboard.writeText(val).then(() => showToast("Copied"));
+    }
+
+    function updateLogic() {
+        const secret = secretInput.value.trim().replace(/\s/g, '');
+        if (!secret || !currentCode.classList.contains('revealed')) return;
+
+        try {
+            const totp = new OTPAuth.TOTP({
+                secret: OTPAuth.Secret.fromBase32(secret),
+                digits: 6,
+                period: 30
+            });
+
+            const now = Date.now();
+            const timeLeft = 30 - (Math.floor(now / 1000) % 30);
+            
+            currentCode.innerText = totp.generate();
+            nextCode.innerText = totp.generate({ timestamp: now + 30000 });
+            
+            timerText.innerText = timeLeft + "s";
+            barFill.style.width = (timeLeft / 30 * 100) + "%";
+            
+            const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
+            barFill.style.backgroundColor = color;
+            timerText.style.color = color;
+        } catch (e) {
+            currentCode.innerText = "INVALID";
+        }
+    }
+
+    // Initialize on load
+    window.onload = init;
+    setInterval(updateLogic, 1000);
+</script>
+</body>
+</html>
