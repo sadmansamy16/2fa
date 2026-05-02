@@ -7,6 +7,7 @@
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         html, body {
@@ -19,34 +20,37 @@
         .card {
             background: #ffffff;
             border-radius: 40px;
-            padding: 40px 30px;
+            padding: 35px 25px;
             text-align: center;
             width: 90%;
             max-width: 380px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             box-sizing: border-box;
-            position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
-        .copy-url-btn {
-            position: absolute; top: 25px; right: 25px;
-            background: #f2f2f7; border: none; border-radius: 50%;
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; color: #8e8e93; transition: all 0.2s ease;
-        }
-        .copy-url-btn:active { transform: scale(0.9); background: #e5e5ea; }
+        h2 { font-size: 26px; font-weight: 700; margin: 0; color: #1c1c1e; }
+        .sub-text { font-size: 14px; color: #8e8e93; margin-top: -5px; }
 
-        h2 { font-size: 28px; font-weight: 600; margin: 0; color: #1c1c1e; }
-        .sub-text { font-size: 15px; color: #aeaeb2; margin-top: -10px; margin-bottom: 5px; }
+        /* Action Buttons for Camera/File */
+        .action-row { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-secondary {
+            flex: 1; background: #f2f2f7; border: 1px solid #d1d1d6;
+            border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            color: #1c1c1e; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-secondary:active { background: #e5e5ea; transform: scale(0.96); }
+
+        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 10px; }
 
         .input-field {
             width: 100%; background: #f2f2f7; border: 1.5px solid #007aff;
             border-radius: 18px; padding: 16px; font-family: 'Courier New', monospace;
-            font-size: 20px; text-align: center; outline: none; box-sizing: border-box;
-            color: #1c1c1e; letter-spacing: 1px;
+            font-size: 18px; text-align: center; outline: none; box-sizing: border-box;
+            color: #1c1c1e;
         }
 
         .code-container {
@@ -56,12 +60,12 @@
 
         .label-tiny {
             font-size: 11px; font-weight: 700; color: #aeaeb2;
-            text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px;
+            text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;
         }
 
         #currentCode {
             font-size: 44px; font-weight: 800; color: #007aff;
-            letter-spacing: 5px; margin-bottom: 20px;
+            letter-spacing: 5px; margin-bottom: 20px; font-variant-numeric: tabular-nums;
         }
 
         .btn-primary {
@@ -70,21 +74,17 @@
             cursor: pointer; transition: all 0.3s ease;
         }
 
-        .footer-info { display: flex; justify-content: space-between; align-items: center; padding: 5px; margin-top: 10px;}
-        .next-up-box { text-align: left; }
-        
+        .footer-info { display: flex; justify-content: space-between; align-items: flex-end; padding: 5px; }
         .next-up-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; }
         
-        .material-symbols-outlined { font-size: 20px; vertical-align: middle; transition: transform 0.2s; }
-
-        .timer-container { min-width: 90px; text-align: right; }
+        .timer-container { min-width: 80px; text-align: right; }
         #timerText { font-size: 12px; font-weight: 700; color: #007aff; }
         .progress-bg { background: #d1d1d6; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }
         #progressBar { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
 
         #toast {
-            position: fixed; top: 30px; background: rgba(0,0,0,0.9);
+            position: fixed; top: 30px; background: rgba(0,0,0,0.85);
             color: white; padding: 12px 25px; border-radius: 30px;
             font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
             z-index: 999;
@@ -96,146 +96,16 @@
 <div id="toast">Copied</div>
 
 <div class="card">
-    <button class="copy-url-btn" onclick="copyCurrentUrl()" aria-label="Copy URL">
-        <span class="material-symbols-outlined" id="urlIcon">link</span>
-    </button>
-
     <h2>Authenticator</h2>
-    <div class="sub-text">Secure Link Protocol</div>
+    <div class="sub-text">Scan QR or enter secret</div>
 
-    <input type="text" id="secretInput" class="input-field" placeholder="Enter Secret Key" spellcheck="false">
-
-    <div class="code-container">
-        <span class="label-tiny">Current Code</span>
-        <div id="currentCode">------</div>
-        <button class="btn-primary" id="actionBtn" onclick="copyMainCode()">Copy Code</button>
-    </div>
-
-    <div class="footer-info">
-        <div class="next-up-box">
-            <span class="label-tiny">Next Up</span>
-            <div class="next-up-row" onclick="copyValue('nextCode')" aria-label="Copy Next Code">
-                <span id="nextCode">------</span>
-                <span class="material-symbols-outlined" id="nextIcon" style="color: #007aff; opacity: 0.6;">content_copy</span>
-            </div>
-        </div>
-        <div class="timer-container">
-            <span id="timerText">30s</span>
-            <div class="progress-bg"><div id="progressBar"></div></div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const secretInput = document.getElementById('secretInput');
-    const currentDisplay = document.getElementById('currentCode');
-    const nextDisplay = document.getElementById('nextCode');
-    const timerText = document.getElementById('timerText');
-    const progressBar = document.getElementById('progressBar');
-    const actionBtn = document.getElementById('actionBtn');
-
-    // Automatically grab secret from URL path
-    const path = window.location.pathname.split('/').filter(p => p).pop();
-    if (path && path.length > 4) { 
-        secretInput.value = path.toUpperCase(); 
-    }
-
-    async function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.opacity = "1";
-        setTimeout(() => t.style.opacity = "0", 1500);
-    }
-
-    async function safeCopy(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            return true;
-        } catch (err) {
-            // Fallback for older browsers
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            return true;
-        }
-    }
-
-    function copyCurrentUrl() {
-        safeCopy(window.location.href);
-        showToast("URL Copied");
-        const icon = document.getElementById('urlIcon');
-        icon.innerText = "check";
-        setTimeout(() => icon.innerText = "link", 1500);
-    }
-
-    function copyMainCode() {
-        const code = currentDisplay.innerText;
-        if (code === "------" || code === "INVALID") return;
-        
-        safeCopy(code);
-        showToast("Code Copied");
-        
-        actionBtn.innerText = "✓ Copied";
-        actionBtn.style.background = "#34c759";
-        setTimeout(() => {
-            actionBtn.innerText = "Copy Code";
-            actionBtn.style.background = "#007aff";
-        }, 1000);
-    }
-
-    function copyValue(id) {
-        const val = document.getElementById(id).innerText;
-        if (val.includes('-')) return;
-        safeCopy(val);
-        showToast("Next Code Copied");
-        const icon = document.getElementById('nextIcon');
-        icon.style.transform = "scale(1.4)";
-        setTimeout(() => icon.style.transform = "scale(1)", 200);
-    }
-
-    function updateTOTP() {
-        // Sanitize input: remove spaces and non-base32 chars
-        let raw = secretInput.value.replace(/\s/g, '').replace(/[^A-Z2-7]/gi, '').toUpperCase();
-        if (!raw) {
-            currentDisplay.innerText = "------";
-            nextDisplay.innerText = "------";
-            return;
-        }
-
-        try {
-            const totp = new OTPAuth.TOTP({
-                secret: OTPAuth.Secret.fromBase32(raw),
-                digits: 6,
-                period: 30
-            });
-
-            const now = Date.now();
-            const timeLeft = 30 - (Math.floor(now / 1000) % 30);
-            
-            currentDisplay.innerText = totp.generate();
-            nextDisplay.innerText = totp.generate({ timestamp: now + 30000 });
-            
-            timerText.innerText = timeLeft + "s";
-            progressBar.style.width = (timeLeft / 30 * 100) + "%";
-            
-            // Color warning when time is low
-            const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
-            progressBar.style.backgroundColor = color; 
-            timerText.style.color = color;
-        } catch (e) {
-            currentDisplay.innerText = "INVALID";
-        }
-    }
-
-    // Run every second
-    setInterval(updateTOTP, 1000);
-    // Initial run
-    updateTOTP();
-
-    // Listen for manual input changes
-    secretInput.addEventListener('input', updateTOTP);
-</script>
-</body>
-</html>
+    <div class="action-row">
+        <button class="btn-secondary" id="startCamBtn" onclick="startCamera()">
+            <span class="material-symbols-outlined">photo_camera</span> Camera
+        </button>
+        <button class="btn-secondary" id="stopCamBtn" onclick="stopCamera()" style="display:none; color:#ff3b30;">
+            <span class="material-symbols-outlined">close</span> Close
+        </button>
+        <label class="btn-secondary">
+            <span class="material-symbols-outlined">upload_file</span> File
+            <input type="file" accept="image/*" id="qr-input" onchange="scanFile(this)" style="display:
