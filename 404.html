@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Authenticator</title>
     
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=visibility,check_circle,content_copy" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=visibility,content_copy" />
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
 
     <style>
@@ -18,155 +18,42 @@
 
         .card {
             background: #ffffff;
-            border-radius: 32px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-            padding: 35px 25px;
+            border-radius: 40px;
+            padding: 45px 30px;
             text-align: center;
             width: 90%;
-            max-width: 360px;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
+            box-sizing: border-box;
         }
 
-        h2 { font-size: 22px; font-weight: 700; margin: 0; color: #1c1c1e; }
-        p { font-size: 14px; color: #8e8e93; margin: -10px 0 5px 0; }
+        h2 { font-size: 28px; font-weight: 600; margin: 0; color: #1c1c1e; }
+        .sub-text { font-size: 15px; color: #aeaeb2; margin-top: -15px; }
 
         .input-field {
-            width: 100%; background: #f9f9f9; border: 1.5px solid #e5e5ea;
-            border-radius: 16px; padding: 18px; font-family: 'SF Mono', monospace;
-            font-size: 15px; text-align: center; outline: none; box-sizing: border-box;
-            color: #48484a;
+            width: 100%; background: #f2f2f7; border: none;
+            border-radius: 18px; padding: 22px; font-family: 'Courier New', monospace;
+            font-size: 22px; text-align: center; outline: none; box-sizing: border-box;
+            color: #636366; letter-spacing: 1px;
         }
 
-        .code-box {
-            background: #f2f2f7; 
-            border-radius: 28px; padding: 30px 20px;
+        .code-container {
+            background: #f8f9fb; border-radius: 30px; padding: 35px 20px;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        .label-tiny {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 1px; color: #8e8e93; margin-bottom: 15px;
+        .label-upper {
+            font-size: 12px; font-weight: 600; color: #aeaeb2;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
         }
 
         #currentCode {
-            font-size: 48px; font-weight: 800; color: #007aff;
-            letter-spacing: 4px; margin-bottom: 25px;
-            filter: blur(12px); transition: filter 0.4s ease;
-            user-select: none;
+            font-size: 52px; font-weight: 700; color: #007aff;
+            letter-spacing: 6px; margin-bottom: 25px;
+            filter: blur(14px); transition: filter 0.4s ease;
         }
 
-        #currentCode.active { filter: blur(0); }
-
-        .btn-primary {
+        .btn-main {
             width: 100%; background: #007aff; color: white; border: none;
-            border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 600;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: all 0.2s;
-        }
-
-        .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
-
-        #toast {
-            position: fixed; bottom: 30px; background: rgba(0,0,0,0.8);
-            color: white; padding: 12px 24px; border-radius: 25px;
-            font-size: 14px; opacity: 0; transition: opacity 0.3s;
-        }
-    </style>
-</head>
-<body>
-
-<div id="toast">Key copied to clipboard</div>
-
-<div class="card">
-    <h2>Authenticator</h2>
-    <p>Secure Link Protocol</p>
-
-    <input type="text" id="secretInput" class="input-field" placeholder="No key detected" readonly>
-
-    <div class="code-box">
-        <span class="label-tiny">Verification Code</span>
-        <div id="currentCode">000000</div>
-        
-        <button class="btn-primary" id="actionBtn" onclick="handleShow()">
-            <span class="material-symbols-outlined" id="btnIcon">visibility</span>
-            <span id="btnText">Show</span>
-        </button>
-    </div>
-</div>
-
-<script>
-    const secretInput = document.getElementById('secretInput');
-    const currentDisplay = document.getElementById('currentCode');
-    const actionBtn = document.getElementById('actionBtn');
-    const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
-    const toast = document.getElementById('toast');
-
-    // 1. Capture Secret from URL Path
-    const pathValue = window.location.pathname.split('/').pop();
-    
-    if (pathValue && pathValue.length > 3) {
-        const cleanSecret = pathValue.toUpperCase();
-        secretInput.value = cleanSecret;
-
-        // 2. Auto-copy the secret to clipboard on load
-        navigator.clipboard.writeText(cleanSecret).then(() => {
-            showToast("Secret key copied!");
-        });
-    }
-
-    function showToast(msg) {
-        toast.innerText = msg;
-        toast.style.opacity = "1";
-        setTimeout(() => toast.style.opacity = "0", 2000);
-    }
-
-    function handleShow() {
-        const secret = secretInput.value;
-        if (!secret) {
-            showToast("No secret found in URL");
-            return;
-        }
-
-        try {
-            // 3. The "Paste & Generate" Logic
-            const totp = new OTPAuth.TOTP({
-                secret: OTPAuth.Secret.fromBase32(secret),
-                digits: 6,
-                period: 30
-            });
-
-            // Update UI
-            currentDisplay.innerText = totp.generate();
-            currentDisplay.classList.add('active');
-            
-            // Transform button
-            actionBtn.style.background = "#34c759";
-            btnText.innerText = "Copied";
-            btnIcon.innerText = "check_circle";
-
-            // 4. Copy the generated code to clipboard
-            navigator.clipboard.writeText(currentDisplay.innerText);
-            showToast("2FA Code copied!");
-
-        } catch (e) {
-            showToast("Invalid key format");
-        }
-    }
-
-    // Keep code updated every second if revealed
-    setInterval(() => {
-        if (currentDisplay.classList.contains('active') && secretInput.value) {
-            const totp = new OTPAuth.TOTP({
-                secret: OTPAuth.Secret.fromBase32(secretInput.value),
-                digits: 6,
-                period: 30
-            });
-            currentDisplay.innerText = totp.generate();
-        }
-    }, 1000);
-</script>
-</body>
-</html>
