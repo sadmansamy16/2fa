@@ -25,8 +25,17 @@
         #currentCode { font-size: 44px; font-weight: 800; color: #007aff; letter-spacing: 5px; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
         .btn-primary { width: 100%; background: #007aff; color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; padding: 5px; }
-        .next-up-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; }
+        
+        /* NEXT UP SECTION ANIMATIONS */
+        .next-up-row { 
+            display: flex; align-items: center; gap: 8px; cursor: pointer; 
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            padding: 4px 8px; border-radius: 8px; margin-left: -8px;
+        }
+        .next-up-row:active { transform: scale(0.95); opacity: 0.7; }
+        #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; transition: color 0.3s ease; }
+        #nextCopyIcon { font-size: 16px; color: #007aff; transition: all 0.3s ease; }
+
         .timer-container { min-width: 80px; text-align: right; }
         #timerText { font-size: 12px; font-weight: 700; color: #007aff; }
         .progress-bg { background: #d1d1d6; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }
@@ -68,7 +77,7 @@
             <span class="label-tiny">Next Up</span>
             <div class="next-up-row" onclick="copyValue('nextCode')">
                 <span id="nextCode">------</span>
-                <span class="material-symbols-outlined" style="font-size:16px; color:#007aff;">content_copy</span>
+                <span class="material-symbols-outlined" id="nextCopyIcon">content_copy</span>
             </div>
         </div>
         <div class="timer-container">
@@ -85,21 +94,14 @@
     const timerText = document.getElementById('timerText');
     const progressBar = document.getElementById('progressBar');
     const copyBtn = document.getElementById('copyBtn');
+    const nextCopyIcon = document.getElementById('nextCopyIcon');
     const html5QrCode = new Html5Qrcode("reader");
 
-    // --- STRICT SECURITY GATE ---
     function parseHash() {
         const rawPath = window.location.pathname;
         const pathSegments = rawPath.split('/').filter(p => p);
         const hash = window.location.hash.substring(1);
-
-        // 1. BLOCKED: If secret is in path, kick to root (safety first)
-        if (pathSegments.length > 0) {
-            window.location.replace("/"); 
-            return;
-        }
-
-        // 2. ALLOWED: Process only if in the HASH
+        if (pathSegments.length > 0) { window.location.replace("/"); return; }
         if (hash && hash.length > 3) {
             secretInput.value = decodeURIComponent(hash).toUpperCase().replace(/\s/g, '');
             updateTOTP();
@@ -198,9 +200,23 @@
         if (val.includes('-') || val === "INVALID") return;
         await safeCopy(val);
         showToast("Code Copied");
+
         if (id === 'currentCode') {
             copyBtn.innerText = "✓ Copied"; copyBtn.style.background = "#34c759";
             setTimeout(() => { copyBtn.innerText = "Copy Code"; copyBtn.style.background = "#007aff"; }, 1000);
+        } else if (id === 'nextCode') {
+            // NEXT UP ANIMATION
+            nextDisplay.style.color = "#34c759";
+            nextCopyIcon.innerText = "check_circle";
+            nextCopyIcon.style.color = "#34c759";
+            nextCopyIcon.style.transform = "scale(1.2)";
+            
+            setTimeout(() => {
+                nextDisplay.style.color = "#8e8e93";
+                nextCopyIcon.innerText = "content_copy";
+                nextCopyIcon.style.color = "#007aff";
+                nextCopyIcon.style.transform = "scale(1)";
+            }, 1000);
         }
     }
 
