@@ -11,14 +11,14 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        /* Initial state hidden for professional fade-in */
+        /* Fade-in Setup */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #f2f2f7; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; justify-content: center; align-items: center; 
             opacity: 0; 
-            transition: opacity 0.5s ease-in-out;
+            transition: opacity 0.4s ease-in-out;
         }
 
         .card { 
@@ -26,33 +26,28 @@
             text-align: center; width: 90%; max-width: 380px; 
             display: flex; flex-direction: column; gap: 15px; 
             box-sizing: border-box; position: relative; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             transform: translateY(10px);
-            transition: transform 0.5s ease-out;
+            transition: transform 0.4s ease-out;
         }
 
-        /* Show state */
-        body.loaded { opacity: 1; }
-        body.loaded .card { transform: translateY(0); }
+        /* Visible State */
+        body.visible { opacity: 1; }
+        body.visible .card { transform: translateY(0); }
 
         .share-link-btn { position: absolute; top: 25px; right: 25px; background: #f2f2f7; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #8e8e93; transition: all 0.2s ease; }
         h2 { font-size: 26px; font-weight: 700; margin: 0; color: #1c1c1e; padding-right: 30px; }
         .sub-text { font-size: 14px; color: #8e8e93; margin-top: -5px; }
         .action-row { display: flex; gap: 10px; margin-top: 5px; }
         .btn-secondary { flex: 1; background: #f2f2f7; border: 1px solid #d1d1d6; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; color: #1c1c1e; cursor: pointer; }
-        
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 10px; border: 1px solid #d1d1d6; }
-        
         .input-field { width: 100%; background: #f2f2f7; border: 1.5px solid #007aff; border-radius: 18px; padding: 16px; font-family: 'Courier New', monospace; font-size: 18px; text-align: center; outline: none; box-sizing: border-box; color: #1c1c1e; }
-        
         .code-container { background: #f8f9fb; border-radius: 30px; padding: 25px 20px; display: flex; flex-direction: column; align-items: center; }
         .label-tiny { font-size: 11px; font-weight: 700; color: #aeaeb2; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; }
         #currentCode { font-size: 44px; font-weight: 800; color: #007aff; letter-spacing: 5px; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
-        
         .btn-primary { width: 100%; background: #007aff; color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; padding: 5px; }
         
-        /* NEXT UP SECTION */
         .next-up-row { 
             display: flex; align-items: center; gap: 8px; cursor: pointer; 
             transition: transform 0.2s ease, opacity 0.2s ease;
@@ -66,7 +61,6 @@
         #timerText { font-size: 12px; font-weight: 700; color: #007aff; }
         .progress-bg { background: #d1d1d6; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }
         #progressBar { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
-        
         #toast { position: fixed; top: 30px; background: rgba(0,0,0,0.85); color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
     </style>
 </head>
@@ -80,7 +74,6 @@
     </button>
     <h2>Authenticator</h2>
     <div class="sub-text">Secure TOTP</div>
-    
     <div class="action-row">
         <button class="btn-secondary" id="startCamBtn" onclick="startCamera()">
             <span class="material-symbols-outlined">photo_camera</span> Camera
@@ -93,17 +86,13 @@
             <input type="file" accept="image/*" id="qr-input" onchange="scanFile(this)" style="display: none;">
         </label>
     </div>
-
     <div id="reader"></div>
-    
     <input type="text" id="secretInput" class="input-field" placeholder="Secret Key" spellcheck="false" autocomplete="off">
-    
     <div class="code-container">
         <span class="label-tiny">Current Code</span>
         <div id="currentCode">------</div>
         <button class="btn-primary" id="copyBtn" onclick="copyValue('currentCode')">Copy Code</button>
     </div>
-
     <div class="footer-info">
         <div class="next-up-box">
             <span class="label-tiny">Next Up</span>
@@ -129,23 +118,20 @@
     const nextCopyIcon = document.getElementById('nextCopyIcon');
     const html5QrCode = new Html5Qrcode("reader");
 
-    // --- LOGIC GATES ---
     function parseHash() {
         const rawPath = window.location.pathname;
         const pathSegments = rawPath.split('/').filter(p => p);
         const hash = window.location.hash.substring(1);
 
-        // REJECT if secret arrived as a path (Security Enforcement)
+        // Security rejection gate
         if (pathSegments.length > 0) {
             window.location.replace("https://2fa.samy.pro.bd/");
             return;
         }
 
-        // ACCEPT if secret is in the hash (#)
         if (hash && hash.length > 3) {
             secretInput.value = decodeURIComponent(hash).toUpperCase().replace(/\s/g, '');
             updateTOTP();
-            // Clear URL fragment for privacy after loading
             window.history.replaceState(null, null, window.location.pathname);
         } else {
             currentDisplay.innerText = "------";
@@ -153,14 +139,11 @@
             secretInput.value = "";
         }
         
-        // Trigger professional fade-in
-        document.body.classList.add('loaded');
+        // Final Step: Unlock visibility after logic is settled
+        document.body.classList.add('visible');
     }
 
     window.addEventListener('hashchange', parseHash);
-    
-    // Initialize
-    window.onload = parseHash;
 
     function showToast(msg) {
         const t = document.getElementById('toast');
@@ -251,12 +234,10 @@
             copyBtn.innerText = "✓ Copied"; copyBtn.style.background = "#34c759";
             setTimeout(() => { copyBtn.innerText = "Copy Code"; copyBtn.style.background = "#007aff"; }, 1000);
         } else if (id === 'nextCode') {
-            // NEXT UP FEEDBACK
             nextDisplay.style.color = "#34c759";
             nextCopyIcon.innerText = "check_circle";
             nextCopyIcon.style.color = "#34c759";
             nextCopyIcon.style.transform = "scale(1.2)";
-            
             setTimeout(() => {
                 nextDisplay.style.color = "#8e8e93";
                 nextCopyIcon.innerText = "content_copy";
@@ -268,6 +249,9 @@
 
     secretInput.addEventListener('input', updateTOTP);
     setInterval(updateTOTP, 1000);
+    
+    // Start logic
+    parseHash();
 </script>
 </body>
 </html>
