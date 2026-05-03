@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Authenticator</title>
+    <title>Authenticator Pro</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
@@ -137,17 +137,21 @@
     const copyBtn = document.getElementById('copyBtn');
     const html5QrCode = new Html5Qrcode("reader");
 
-    // --- HASH PARSING LOGIC ---
-    // Grabs everything after the # symbol
+    // --- UPDATED HASH PARSING WITH REPLACE STATE ---
     function parseHash() {
         const hash = window.location.hash.substring(1);
         if (hash && hash.length > 3) {
+            // 1. Process the secret
             secretInput.value = decodeURIComponent(hash).toUpperCase().replace(/\s/g, '');
             updateTOTP();
+            
+            // 2. THE DIGITAL ERASER: 
+            // Wipes the address bar clean immediately after reading the secret.
+            // This prevents the secret from staying in the URL or history.
+            window.history.replaceState(null, null, window.location.pathname);
         }
     }
 
-    // Run on load and if the hash changes without reloading
     window.addEventListener('hashchange', parseHash);
     parseHash();
 
@@ -167,10 +171,10 @@
         }
     }
 
-    // Generates the pretty link for your main domain using the hash
     function copyGeneratedUrl() {
         const secret = secretInput.value.trim();
         if (!secret) { showToast("Enter a secret first"); return; }
+        // Links always use the safe # format
         const finalUrl = "https://samy.pro.bd/2fa/#" + secret;
         safeCopy(finalUrl);
         showToast("Privacy-Safe Link Copied");
