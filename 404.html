@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="robots" content="noindex, nofollow, noarchive">
-
-
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Authenticator Pro</title>
     
@@ -19,81 +17,59 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex; justify-content: center; align-items: center;
         }
-
         .card {
-            background: #ffffff;
-            border-radius: 40px;
-            padding: 35px 25px;
-            text-align: center;
-            width: 90%;
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-sizing: border-box;
-            position: relative;
+            background: #ffffff; border-radius: 40px; padding: 35px 25px;
+            text-align: center; width: 90%; max-width: 380px;
+            display: flex; flex-direction: column; gap: 15px;
+            box-sizing: border-box; position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
-
-        /* The Link Share Button */
         .share-link-btn {
             position: absolute; top: 25px; right: 25px;
             background: #f2f2f7; border: none; border-radius: 50%;
             width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; color: #8e8e93; transition: all 0.2s ease;
         }
-        .share-link-btn:active { transform: scale(0.9); background: #e5e5ea; }
-
         h2 { font-size: 26px; font-weight: 700; margin: 0; color: #1c1c1e; padding-right: 30px; }
         .sub-text { font-size: 14px; color: #8e8e93; margin-top: -5px; }
-
         .action-row { display: flex; gap: 10px; margin-top: 5px; }
         .btn-secondary {
             flex: 1; background: #f2f2f7; border: 1px solid #d1d1d6;
             border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 600;
             display: flex; align-items: center; justify-content: center; gap: 6px;
-            color: #1c1c1e; cursor: pointer; transition: all 0.2s;
+            color: #1c1c1e; cursor: pointer;
         }
-
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 10px; }
-
         .input-field {
             width: 100%; background: #f2f2f7; border: 1.5px solid #007aff;
             border-radius: 18px; padding: 16px; font-family: 'Courier New', monospace;
             font-size: 18px; text-align: center; outline: none; box-sizing: border-box;
             color: #1c1c1e;
         }
-
         .code-container {
             background: #f8f9fb; border-radius: 30px; padding: 25px 20px;
             display: flex; flex-direction: column; align-items: center;
         }
-
         .label-tiny {
             font-size: 11px; font-weight: 700; color: #aeaeb2;
             text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;
         }
-
         #currentCode {
             font-size: 44px; font-weight: 800; color: #007aff;
             letter-spacing: 5px; margin-bottom: 20px; font-variant-numeric: tabular-nums;
         }
-
         .btn-primary {
             width: 100%; background: #007aff; color: white; border: none;
             border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600;
             cursor: pointer; transition: all 0.3s ease;
         }
-
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; padding: 5px; }
         .next-up-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         #nextCode { font-size: 16px; font-weight: 600; color: #8e8e93; }
-        
         .timer-container { min-width: 80px; text-align: right; }
         #timerText { font-size: 12px; font-weight: 700; color: #007aff; }
         .progress-bg { background: #d1d1d6; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }
         #progressBar { background: #007aff; height: 100%; width: 100%; transition: width 1s linear; }
-
         #toast {
             position: fixed; top: 30px; background: rgba(0,0,0,0.85);
             color: white; padding: 12px 25px; border-radius: 30px;
@@ -112,7 +88,7 @@
     </button>
 
     <h2>Authenticator</h2>
-    <div class="sub-text">Scan QR or enter secret</div>
+    <div class="sub-text">Secure TOTP</div>
 
     <div class="action-row">
         <button class="btn-secondary" id="startCamBtn" onclick="startCamera()">
@@ -161,9 +137,19 @@
     const copyBtn = document.getElementById('copyBtn');
     const html5QrCode = new Html5Qrcode("reader");
 
-    // Init from URL path
-    const path = window.location.pathname.split('/').filter(p => p).pop();
-    if (path && path.length > 3) { secretInput.value = path.toUpperCase(); }
+    // --- HASH PARSING LOGIC ---
+    // Grabs everything after the # symbol
+    function parseHash() {
+        const hash = window.location.hash.substring(1);
+        if (hash && hash.length > 3) {
+            secretInput.value = decodeURIComponent(hash).toUpperCase().replace(/\s/g, '');
+            updateTOTP();
+        }
+    }
+
+    // Run on load and if the hash changes without reloading
+    window.addEventListener('hashchange', parseHash);
+    parseHash();
 
     function showToast(msg) {
         const t = document.getElementById('toast');
@@ -172,32 +158,22 @@
     }
 
     async function safeCopy(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-        } catch (err) {
+        try { await navigator.clipboard.writeText(text); } 
+        catch (err) {
             const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
+            textArea.value = text; document.body.appendChild(textArea);
+            textArea.select(); document.execCommand('copy');
             document.body.removeChild(textArea);
         }
     }
 
-    // New logic: Generate link from the secret in the box
+    // Generates the pretty link for your main domain using the hash
     function copyGeneratedUrl() {
         const secret = secretInput.value.trim();
-        if (!secret) {
-            showToast("Enter a secret first");
-            return;
-        }
-        // Base URL + current secret
-        const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/') + '/';
-        const finalUrl = baseUrl + secret;
-        
+        if (!secret) { showToast("Enter a secret first"); return; }
+        const finalUrl = "https://samy.pro.bd/2fa/#" + secret;
         safeCopy(finalUrl);
-        showToast("Shareable Link Copied");
-        
+        showToast("Privacy-Safe Link Copied");
         const icon = document.getElementById('urlIcon');
         icon.innerText = "check";
         setTimeout(() => icon.innerText = "link", 1500);
@@ -210,10 +186,7 @@
         try {
             await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
             (text) => { processInput(text); stopCamera(); });
-        } catch (err) {
-            alert("Camera error.");
-            stopCamera();
-        }
+        } catch (err) { alert("Camera error."); stopCamera(); }
     }
 
     function stopCamera() {
@@ -255,41 +228,32 @@
             nextDisplay.innerText = "------";
             return;
         }
-
         try {
-            // Support 4-digit secrets (UTF8 fallback) or standard Base32
             const secretObj = raw.length < 8 ? OTPAuth.Secret.fromUTF8(raw) : OTPAuth.Secret.fromBase32(raw.replace(/[^A-Z2-7]/gi, '').toUpperCase());
-            
             const totp = new OTPAuth.TOTP({ secret: secretObj, digits: 6, period: 30 });
             const now = Date.now();
             const timeLeft = 30 - (Math.floor(now / 1000) % 30);
-            
             currentDisplay.innerText = totp.generate();
             nextDisplay.innerText = totp.generate({ timestamp: now + 30000 });
-            
             timerText.innerText = timeLeft + "s";
             progressBar.style.width = (timeLeft / 30 * 100) + "%";
             const color = timeLeft <= 5 ? "#ff3b30" : "#007aff";
             progressBar.style.backgroundColor = color; 
             timerText.style.color = color;
-        } catch (e) {
-            currentDisplay.innerText = "INVALID";
-        }
+        } catch (e) { currentDisplay.innerText = "INVALID"; }
     }
 
     async function copyValue(id) {
         const val = document.getElementById(id).innerText;
         if (val.includes('-') || val === "INVALID") return;
-        
         await safeCopy(val);
         showToast("Code Copied");
-        
         if (id === 'currentCode') {
             copyBtn.innerText = "✓ Copied";
-            copyBtn.style.background = "#34c759"; // SUCCESS GREEN
+            copyBtn.style.background = "#34c759";
             setTimeout(() => {
                 copyBtn.innerText = "Copy Code";
-                copyBtn.style.background = "#007aff"; // BACK TO BLUE
+                copyBtn.style.background = "#007aff";
             }, 1000);
         }
     }
