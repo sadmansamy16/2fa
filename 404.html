@@ -133,9 +133,9 @@
     }
 
     function copyGeneratedUrl() {
-        const secret = secretInput.value.trim();
+        const secret = secretInput.value.trim().replace(/\s/g, '');
         if (!secret) { showToast("Enter a secret first"); return; }
-        const finalUrl = "https://samy.pro.bd/2fa/#" + secret;
+        const finalUrl = "https://samy.pro.bd/2fa/#" + encodeURIComponent(secret);
         safeCopy(finalUrl);
         showToast("Privacy-Safe Link Copied");
         const icon = document.getElementById('urlIcon');
@@ -220,7 +220,11 @@
         }
     }
 
-    secretInput.addEventListener('input', updateTOTP);
+    secretInput.addEventListener('input', () => {
+        secretInput.value = secretInput.value.replace(/\s/g, '');
+        updateTOTP();
+    });
+    
     setInterval(updateTOTP, 1000);
     updateTOTP();
 </script>
